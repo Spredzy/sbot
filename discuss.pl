@@ -24,6 +24,14 @@ process_message(Id, Server, "PRIVMSG", [Param|_], Text) :-
     prefix_id(Server, Nick, _, _),
     public_message(Id, S, Nick, Param).
 
+process_message(Id, Server, "PRIVMSG", [Param|_], Text) :-
+    split_string(Text, " ", "@:.,!", [Elt|_]),
+    string_upper(Elt, UpperElt),
+    member(UpperElt, ["HI", "HELLO", "SALUT", "BONJOUR", "HOLA", "HEY", "YO", "PLOP", "O/", "MORNING", "MATIN", "ALOHA"]),
+    prefix_id(Server, Nick, _, _),
+    format(string(Answer), "~w ~w", [Elt, Nick]),
+    send_message(Answer, [Id, Nick, Param]).
+
 process_message(_, _, _, _, _).
 
 private_message(Id, TextList, Nick) :-
@@ -56,7 +64,7 @@ answer(TextList, Context, PrefixedAnswer) :-
 answer(List, [_,Nick|_], Answer) :-
     member(Elt, List),
     string_upper(Elt, UpperElt),
-    member(UpperElt, ["HI", "HELLO", "SALUT", "BONJOUR", "HOLA", "HEY"]),
+    member(UpperElt, ["HI", "HELLO", "SALUT", "BONJOUR", "HOLA", "HEY", "YO", "PLOP", "O/", "MORNING", "MATIN", "ALOHA"]),
     format(string(Answer), "~w ~w", [Elt, Nick]),
     !.
 
