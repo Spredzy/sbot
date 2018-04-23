@@ -1,6 +1,6 @@
 %% -*- prolog -*-
 
-:- module(dci, []).
+:- module(dci, [is_dci_job/2, get_dci_job/2]).
 
 :- use_module(library(http/http_open)).
 :- use_module(library(http/http_client)).
@@ -100,6 +100,14 @@ colored("failure", red("failure")).
 
 :- add_fact_solver(dci:dci_solver).
 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% resource predicates
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+is_dci_job(Url, JobId) :-
+    split_string(Url, "/", "",  [_, _, _, "jobs", JobId|_]).
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% status predicates
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -111,6 +119,16 @@ get_dci_jobs(Status) :-
         http_open("https://api.distributed-ci.io/api/v1/global_status",
                   In,
                   [authorization(basic(DciLogin, DciPassword))]),
+        json_read_dict(In, Status),
+        close(In)
+    ).
+
+get_dci_job(JobId, Status) :-
+    config(dci_login, DciLogin),
+    config(dci_password, DciPassword),
+    format(string(Url), "https://api.distributed-ci.io/api/v1/jobs/~w?embed=remoteci,team,topic,components", [JobId]),
+    setup_call_cleanup(
+        http_open(Url, In, [authorization(basic(DciLogin, DciPassword))]),
         json_read_dict(In, Status),
         close(In)
     ).

@@ -9,6 +9,7 @@
 :- use_module(library(xpath)).
 
 :- use_module(config).
+:- use_module(dci).
 :- use_module(gerritlib).
 :- use_module(utils).
 :- use_module(world).
@@ -124,7 +125,7 @@ public_answer(Nick, [Text], _, Answer) :-
     string_upper(Text, UpperElt),
     member(UpperElt, ["HI", "HELLO", "SALUT", "BONJOUR", "HOLA", "HEY", "MORNING", "ALOHA", "MATIN", "PLOP", "O/", "\\O/"]),
     format(string(Answer), "~w ~w", [Text, Nick]).
-    
+
 public_answer(_, TextList, _, Answer) :-
     extract_first_url(TextList, Url),
     url_to_title(Url, Answer),
@@ -134,6 +135,13 @@ url_to_title(Url, Title) :-
     is_gerrit_review(Url, ReviewId, BaseUrl),
     get_gerrit_review(BaseUrl, ReviewId, Review),
     Title = Review.subject.
+
+url_to_title(Url, Title) :-
+    is_dci_job(Url, JobId),
+    get_dci_job(JobId, Status),
+    get_dci_component(Status.job.components, ComponentName),
+    format(string(Title), "Distributed-CI > Status: ~w Topic/Component: ~w/~w Team/RemoteCI: ~w/~w",
+           [Status.job.status, Status.job.topic.name, ComponentName, Status.job.team.name, Status.job.remoteci.name]).
 
 url_to_title(Url, Title) :-
     http_open(Url, Stream, []),
@@ -354,5 +362,8 @@ send_notifications_by_context(Context, _) :-
 
 send_notif([Text, Context], [Text, Context]) :-
     notify(Text, Context).
+
+get_dci_component([Component|_], Name) :-
+    Name = Component.name.
 
 %% discuss.pl ends here
